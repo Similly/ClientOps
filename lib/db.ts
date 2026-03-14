@@ -4,11 +4,10 @@ import { PrismaClient } from "@prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createPrisma() {
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is not configured");
-  }
+  // Build-safe fallback so Next.js can analyze routes during CI/CD without runtime secrets.
+  const connectionString =
+    process.env.DATABASE_URL ??
+    "postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public";
 
   const adapter = new PrismaPg({ connectionString });
 
