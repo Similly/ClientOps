@@ -1,7 +1,7 @@
 # ClientOps
 
 ClientOps is a full-stack client portal for agencies, freelancers, consultants, and service businesses.
-It provides role-based operations workflows for Admins, Team Members, and Clients in a polished SaaS-style UI inspired by the provided Figma design.
+It provides role-based operations workflows for Admins, Team Members, and Clients in a polished SaaS-style UI.
 
 ## Product Concept
 
