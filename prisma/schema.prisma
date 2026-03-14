@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  TEAM_MEMBER
+  CLIENT
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+}
+
+enum RequestType {
+  BUG_FIX
+  CHANGE_REQUEST
+  FEATURE_REQUEST
+  SUPPORT_REQUEST
+}
+
+enum RequestStatus {
+  SUBMITTED
+  IN_REVIEW
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum DocumentVisibility {
+  INTERNAL
+  CLIENT_SHARED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String
+  email         String          @unique
+  passwordHash  String
+  role          UserRole
+  clientProfile Client?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  assignedTasks     Task[]           @relation("TaskAssignee")
+  projectMembership ProjectMember[]
+  uploadedDocuments Document[]       @relation("DocumentUploader")
+  createdRequests   ServiceRequest[] @relation("CreatedRequests")
+  activityEntries   ActivityLog[]    @relation("ActivityActor")
+}
+
+model Client {
+  id              String           @id @default(cuid())
+  companyName     String
+  contactName     String
+  contactEmail    String           @unique
+  phone           String?
+  status          ClientStatus     @default(ACTIVE)
+  notes           String?
+  archivedAt      DateTime?
+  ownerUserId     String?          @unique
+  ownerUser       User?            @relation(fields: [ownerUserId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  projects        Project[]
+  serviceRequests ServiceRequest[]
+  documents       Document[]
+
+  @@index([companyName])
+  @@index([status])
+}
+
+model Project {
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  clientId        String
+  client          Client           @relation(fields: [clientId], references: [id])
+  status          ProjectStatus    @default(PLANNING)
+  priority        Priority         @default(MEDIUM)
+  budget          Decimal?
+  deadline        DateTime?
+  archivedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  members         ProjectMember[]
+  tasks           Task[]
+  documents       Document[]
+  serviceRequests ServiceRequest[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([deadline])
+}
+
+model ProjectMember {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleInProject String?
+  createdAt     DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  assigneeId  String?
+  assignee    User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  dueDate     DateTime?
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(TODO)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model ServiceRequest {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId       String?
+  project         Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdByUserId String
+  createdBy       User          @relation("CreatedRequests", fields: [createdByUserId], references: [id])
+  type            RequestType
+  title           String
+  description     String
+  priority        Priority      @default(MEDIUM)
+  status          RequestStatus @default(SUBMITTED)
+  internalNotes   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+}
+
+model Document {
+  id               String             @id @default(cuid())
+  projectId         String?
+  project           Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  clientId          String?
+  client            Client?            @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  uploadedByUserId  String
+  uploadedBy        User               @relation("DocumentUploader", fields: [uploadedByUserId], references: [id])
+  originalName      String
+  storedPath        String
+  mimeType          String
+  sizeBytes         Int
+  visibility        DocumentVisibility @default(INTERNAL)
+  createdAt         DateTime           @default(now())
+
+  @@index([projectId])
+  @@index([clientId])
+  @@index([visibility])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actor       User?    @relation("ActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  entityType  String
+  entityId    String
+  action      String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
