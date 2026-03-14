@@ -137,6 +137,61 @@ docker compose up --build
 
 App: `http://localhost:3100`
 
+## VPS Deployment
+
+For a Hetzner-style VPS setup, use a reverse proxy plus the production compose file in this repo.
+
+### 1) Prepare a shared Docker network for Caddy
+
+```bash
+docker network create caddy
+```
+
+### 2) Copy the app to the server
+
+Example target directory:
+
+```bash
+/srv/apps/clientops
+```
+
+### 3) Create production env file
+
+Use [`.env.production.example`](/Users/simon/Code/ClientOps/.env.production.example) as the template:
+
+```bash
+cp .env.production.example .env.production
+```
+
+Set:
+
+- `APP_DOMAIN`
+- `POSTGRES_PASSWORD`
+- `DATABASE_URL`
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+
+### 4) Start the production stack
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### 5) Initialize the database
+
+```bash
+docker compose -f docker-compose.prod.yml exec app npx prisma db push
+docker compose -f docker-compose.prod.yml exec app npm run db:seed
+```
+
+### 6) Optional deploy helper
+
+There is a small deploy script at [`scripts/deploy.sh`](/Users/simon/Code/ClientOps/scripts/deploy.sh):
+
+```bash
+bash scripts/deploy.sh /srv/apps/clientops
+```
+
 ## Validation / Quality Commands
 
 ```bash
