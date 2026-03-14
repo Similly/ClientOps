@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: clientops-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -16,6 +17,7 @@ services:
 
   app:
     build: .
+    container_name: clientops-app
     restart: unless-stopped
     env_file:
       - .env.production
@@ -27,9 +29,6 @@ services:
     networks:
       - default
       - caddy
-    labels:
-      caddy: ${APP_DOMAIN}
-      caddy.reverse_proxy: "{{upstreams 3100}}"
 
 volumes:
   postgres_data:
@@ -37,4 +36,3 @@ volumes:
 networks:
   caddy:
     external: true
-
