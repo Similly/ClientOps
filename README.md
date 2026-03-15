@@ -139,7 +139,7 @@ App: `http://localhost:3100`
 
 ## VPS Deployment
 
-For a Hetzner-style VPS setup, use a reverse proxy plus the production compose file in this repo.
+For a VPS setup, use a reverse proxy plus the production compose file in this repo.
 
 ### 1) Prepare a shared Docker network for Caddy
 
